@@ -26,6 +26,82 @@ class Board:
         self.block_4 = self.get_block()
         self.blocks = {1 : self.block_1, 2: self.block_2, 
                        3: self.block_3, 4: self.block_4}
+        self.DIAG_WINSblocks = [[1, 1, 2, 4, 4], [2, 2, 1, 3, 3], [1, 1, 1, 4, 4], 
+                            [1, 1, 4, 4, 4], [2, 2, 2, 3, 3], [2, 2, 3, 3, 3], 
+                            [1, 1, 3, 4, 4], [2, 2, 4, 3, 3]]
+        self.DIAG_WINSplace = [[2, 6, 7, 2, 6], [2, 4, 9, 2, 4], [1, 5, 9, 1, 5], 
+                               [5, 9, 1, 5, 9], [3, 5, 7, 3, 5], [5, 7, 3, 5, 7], 
+                               [4, 8, 3, 4, 8], [6, 8, 1, 6, 8]]
+        
+    def getVal(self, block, position):
+        point = self.pos_key[position - 1]
+        return (self.blocks[block])[point.x][point.y]
+    
+    def testColWin(self, start):
+        B = 'B'
+        W = 'W'
+        self.move(1, start, B)
+        self.move(1, start + 3, B)
+        self.move(1, start + 6, B)
+        self.move(3, start, B)
+        self.move(3, start + 3, B)
+        self.print_board()
+        self.is_goal_achieved()
+        wins = self.is_goal_achieved()
+        h = {'B':0, 'W':0}
+        self.check_cols_heuristic(h)
+        print ("wins = B:", wins[B], "W:",  wins[W])
+        print ("H = B:", h[B], "W:", h[W])
+        self.move(2, start, W)
+        self.move(2, start + 3, W)
+        self.move(2, start + 6, W)
+        self.move(4, start, W)
+        self.move(4, start + 3, W)
+        self.print_board()
+        wins = self.is_goal_achieved()
+        self.check_cols_heuristic(h)
+        print( "wins = B:", wins[B], "W:",  wins[W])
+        print ("H = B:", h[B], "W:", h[W])
+        
+    def testDiagWin(self):
+        token = 'B'
+        for blox in range(0, len(self.DIAG_WINSblocks)):
+            for spot in range(0, len(self.DIAG_WINSblocks[blox])):
+                self.move(self.DIAG_WINSblocks[blox][spot], self.DIAG_WINSplace[blox][spot], token)
+        self.print_board()
+        wins = self.is_goal_achieved()
+        h = {'B':0, 'W':0}
+        self.get_diag_heuristic(h)
+        print ("H = B:", h['B'], "W:", h['W'])
+        print ("Wins = B:", wins['B'], "W:", wins['W'])
+    
+    def testRowWin(self):
+        self.move(1, 1, 'B')
+        self.move(1, 2, 'B')
+        self.move(1, 3, 'B')
+        self.move(2, 1, 'B')
+        self.move(2, 2, 'B')
+        self.move(1, 5, 'B')
+        self.move(1, 6, 'B')
+        self.move(2, 4, 'B')
+        self.move(2, 5, 'B')
+        self.move(2, 6, 'B')
+        self.move(3, 1, 'B')
+        self.move(3, 2, 'B')
+        self.move(3, 3, 'B')
+        self.move(4, 1, 'B')
+        self.move(4, 2, 'B')
+        self.move(3, 8, 'B')
+        self.move(3, 9, 'B')
+        self.move(4, 7, 'B')
+        self.move(4, 8, 'B')
+        self.move(4, 9, 'B')
+        self.print_board()
+        wins = self.is_goal_achieved()
+        h = {'B': 0, 'W':0}
+        self.check_rows_heuristic(h)
+        print("H = B:", h['B'], "W:", h['W'])
+        print ("Wins = B:", wins['B'], "W:", wins['W'])
     
     ''' Returns a block for the board filled with dashes (empty)'''    
     def get_block(self):
@@ -33,19 +109,29 @@ class Board:
     
     ''' prints half (top or bottom) of the gameboard to the console'''
     def print_half(self, b_1, b_2):
-        print '+-------+-------+'
+        print( '+-------+-------+')
         for row in range(0,3):
-            print '|', b_1[row][0], b_1[row][1], b_1[row][2], '|', b_2[row][0], b_2[row][1], b_2[row][2], '|'
+            print( '|', b_1[row][0], b_1[row][1], b_1[row][2], '|', b_2[row][0], b_2[row][1], b_2[row][2], '|')
     
     ''' prints the gameboard to the console'''       
     def print_board(self):
         self.print_half(self.block_1, self.block_2)
         self.print_half(self.block_3, self.block_4)
-        print '+-------+-------+'
-        
+        print ('+-------+-------+')
+     
+    ''' 
+        Gets the heuristic for the current state
+        Returns the heuristic dictionary
+    '''   
     def get_heuristic(self):
-        trash_1, trash_2, h = self.is_goal_achieved()
-        return h
+        heuristic = {'B' : 0, 'W' : 0 }
+        self.check_cols_heuristic(heuristic)
+        self.check_rows_heuristic(heuristic)
+        self.get_diag_heuristic(heuristic)
+        wins = self.is_goal_achieved()
+        heuristic['B'] += (wins['B'] * 100)
+        heuristic['W'] += (wins['W'] * 100)
+        return heuristic
     
     ''' logs the board in its current state to the output file'''   
     def log_board(self):
@@ -65,26 +151,41 @@ class Board:
     def log_full_move(self, block_place, position, block_rot, direction):
         self.file.write(block_place + '/' + ' ' + position + block_rot 
                         + direction + '\n')
-        
+    '''
+         Implements a player's move checking for a win
+         and printing the board afterward.
+         Returns the boolean value true if a winner is found and false if not as
+         well as the dictionary containing wins
+    '''   
     def player_go(self, player, move):
+        print (move)
         the_block = move[0]
         the_spot = move[2]
         self.move(int(the_block), int(the_spot), player.color)
         self.print_board()
         player.moves.append(move)
-        won, winners, trash = self.is_goal_achieved()
-        print "B:", trash['B'], "W:", trash['W']
-        return won, winners
-    
+        wins = self.is_goal_achieved()
+        won = False
+        if wins['B'] > 0 or wins['W'] > 0:
+            won = True
+        return won, wins
+    '''
+         Implements a player's rotation checking for a win
+         and printing the board afterward.
+         Returns the boolean value true if a winner is found and false if not as
+         well as the dictionary containing wins
+    ''' 
     def player_rotate(self, player, rotate):
         the_block = rotate[0]
         the_direction = rotate[1]
         self.rotate(int(the_block), the_direction)
         self.print_board()
         player.moves.append(rotate)
-        won, winners, trash = self.is_goal_achieved()
-        print "B:", trash['B'], "W:", trash['W']
-        return won, winners
+        wins = self.is_goal_achieved()
+        won = False
+        if wins['B'] > 0 or wins['W'] > 0:
+            won = True
+        return won, wins
     
     ''' adds a player's piece to the board in the desired position'''    
     def move(self, block, position, token):
@@ -93,14 +194,18 @@ class Board:
         col = space.y
         (self.blocks[block])[row][col] = token      
 #         self.print_board()
-        
+     
+    ''' 
+        Checks the block and position provided.
+        Returns True if the space is available, False if it is not. 
+    '''   
     def check_move(self, block, position):
         space = self.pos_key[position - 1]
         row = space.x
         col = space.y
         if (self.blocks[block])[row][col] != 'B' and (self.blocks[block])[row][col] != 'W':
             return True
-        return (self.blocks[block])[row][col]
+        return False
         
             
      
@@ -121,224 +226,182 @@ class Board:
                 block[row][1] = row_2[row]
                 block[row][2] = row_1[row]
 #         self.print_board()
-        
+      
+    ''' Sets the players to the correct player order. '''  
     def set_players(self, p_1, p_2):
         self.players.append(p_1)
         self.players.append(p_2)
         
-        
-    def is_goal_achieved(self):   
-        winners = []
-        win_found = False
-        h = {'B': 0, 'W': 0}
-        wins = self.check_rows(self.block_1, self.block_2, h)
-        if wins != False:
-            for w in range(0,len(wins)):
-                if wins[w] == 'B' or wins[w] == 'W':
-                    winners.append(wins[w])
-        wins = self.check_rows(self.block_3, self.block_4, h)
-        if wins!= False:
-            for w in range(0,len(wins)):
-                if wins[w] == 'B' or wins[w] == 'W':
-                    winners.append(wins[w])
-        wins = self.check_cols(self.block_1, self.block_3, h)
-        if len(wins) > 0:
-            for w in range(0,len(wins)):
-                if wins[w] == 'B' or wins[w] == 'W':
-                    winners.append(wins[w])
-        wins = self.check_cols(self.block_2, self.block_4, h)
-        if len(wins) > 0:
-            for w in range(0,len(wins)):
-                if wins[w] == 'B' or wins[w] == 'W':
-                    winners.append(wins[w])
-        wins = self.check_diagonal(h)
-        if len(wins) > 0:
-            for w in range(0,len(wins)):
-                if wins[w] == 'B' or wins[w] == 'W':
-                    winners.append(wins[w])
-        for w in range(0, len(winners)):
-            print winners[w]
-            if winners[w] == 'B' or winners[w] == 'W':
-                win_found = True
-        return win_found, winners, h
+    ''' 
+        Checks to see if any goal states have been achieved. 
+        Returns the dictionary containing number of wins for each
+        token.
+    '''   
+    def is_goal_achieved(self):
+        wins = {'B': 0, 'W': 0}
+        temp = self.check_colsWIN()
+        wins['B'] += temp['B']
+        wins['W'] += temp['W']
+        temp = self.check_diagonalWIN()
+        wins['B'] += temp['B']
+        wins['W'] += temp['W']
+        temp = self.check_rowsWIN()
+        wins['B'] += temp['B']
+        wins['W'] += temp['W']
+        return wins
     
     ''' 
-        Checks the board's diagonals for a winner
+        Computes and sets the heuristic for the diagonal possibilities.
     '''
-    def check_diagonal(self, h):
-        winners = []
-        b1 = self.block_1
-        b2 = self.block_2
-        b3 = self.block_3
-        b4 = self.block_4
-        if b1[2][2] == b4[0][0] and b4[0][0] != '-':
-            if b1[1][1] == b4[0][0] and b4[0][0] == b4[1][1]:
-                h[b1[1][1]] += 10 
-                if b1[0][0] == b4[0][0] or b4[2][2] == b4[0][0]:
-                    winners.append(b4[0][0]);
-                    h[b4[0][0]] += 100
-            if b1[1][1] == b4[0][0]  and b1[0][0] == b4[0][0]:
-                h[b1[1][1]] += 10
-            if b4[1][1] == b4[0][0] and b4[2][2] == b4[1][1]: 
-                h[b4[1][1]] += 10
-        if b1[1][2] == b2[2][0] and b2[2][0] == b4[0][1] and b4[0][1] != '-':
-            if b1[0][1] == b4[0][1] and b4[0][1] == b4[1][2]:
-                winners.append(b4[0][1] )
-                h[b4[0][1]] += 100
-            if b1[0][1] == b4[0][1]: 
-                h[b1[0][1]] += 10
-            if b4[0][1] == b4[1][2]:
-                h[b4[0][1]] += 10
-        if b1[2][1] == b3[0][2] and b4[1][0] == b3[0][2]  and b3[0][2]  != '-':
-            if b1[2][1] == b1[1][0] and b1[2][1]  == b4[2][1]:
-                winners.append(b1[2][1])
-                h[b1[2][1]] += 100
-            if b1[2][1] == b1[1][0]:
-                h[b1[2][1]] += 10
-            if b1[2][1] == b4[2][1]:
-                h[b1[2][1]] += 10
-        if b2[2][0] == b3[0][2] and b3[0][2] != '-':
-            if b2[1][1] == b3[0][2] and b3[1][1] == b3[0][2]:
-                h[b2[1][1]] += 10
-                if b2[0][2] == b3[0][2] or b3[0][2] == b3[2][0]:
-                    winners.append(b3[0][2])
-                    h[b3[0][2]] += 100
-            if b2[1][1] == b3[0][2] and b2[0][0] == b2[1][1]:
-                h[b2[1][1]] += 10
-            if b3[1][1] == b3[0][2] and b3[1][1] == b3[2][0]: 
-                h[b3[1][1]] += 10
-            if b2[1][1] == b3[0][2] and b2[0][2] == b3[0][2]:
-                h[b2[1][1]] += 10
-        if b2[1][0] == b1[2][2] and b2[1][0] == b3[0][1] and b3[0][1] != '-':
-            if b2[0][1] == b2[1][0] and b2[0][1] == b3[1][0]:
-                winners.append(b2[0][1])
-                h[b2[0][1]] += 100
-            if b2[0][1] == b2[1][0] and b2[0][1] != '-':
-                h[b2[0][1]] += 10
-            if b2[0][1] == b3[1][0] and b2[0][1] != '-':
-                h[b3[1][0]] += 10
-        if b2[2][1] == b4[0][0] and b4[0][0] == b3[1][2] and b4[0][0] != '-':
-            if b2[1][2] == b4[0][0] and b4[0][0] == b3[2][1]:       
-                winners.append(b4[0][0])
-                h[b3[0][0]] += 100
-            if b2[1][2] == b4[0][0]:
-                h[b2[1][2]] += 10
-            if b3[2][1] == b4[0][0]:
-                h[b4[0][0]] += 10
-        return winners
+    def get_diag_heuristic(self, hval):
+        blox = self.DIAG_WINSblocks
+        places = self.DIAG_WINSplace
+        val = self.getVal
+        blocset = 0
+        while blocset < len(blox):
+            b = blox[blocset]
+            p = places[blocset]
+            if val(b[0], p[0]) != '-' and val(b[0], p[0]) == val(b[1], p[1]) and val(b[0], p[0]) == val(b[2], p[2]):
+                hval[val(b[0], p[0])] += 5
+                if val(b[0], p[0]) == val(b[3], p[3]):
+                    hval[val(b[0], p[0])] += 10
+            if val(b[1], p[1]) != '-' and val(b[1], p[1]) == val(b[2], p[2]) and val(b[1], p[1]) == val(b[3], p[3]):
+                hval[val(b[1], p[1])] += 5
+                if val(b[1], p[1]) == val(b[4], p[4]):
+                    hval[val(b[1], p[1])] += 10
+            if val(b[2], p[2]) != '-' and val(b[2], p[2]) == val(b[3], p[3]) and val(b[2], p[2]) == val(b[4], p[4]):
+                hval[val(b[2], p[2])] += 5
+            blocset += 1
     
-    ''' Checks the columns of the blocks passed as arguments for a winner
-        Args:
-        blk_1 - the first block from the board to check
-        blk_2 - the second block from the board to check
-        Returns:
-        all winning tokens
+    ''' 
+        Checks the board's diagonals for a winner.
+        Returns all wins in a dictionary mapped by token.
     '''
-    def check_cols(self, blk_1, blk_2, h):
-        winners = []
-        for col in range(0, 3):
-            row_1 = 0
-            row_2 = 1
-            if blk_1[row_1][col] == blk_2[row_2][col] and blk_2[row_2][col] != '-':
-                old = row_1
-                row_1 += 1
-                row_2 -= 1
-                if blk_1[row_1][col] == blk_2[row_2][col] and blk_1[row_1][col] == blk_1[old][col]:
-                    row_1 +=1
-                    if blk_1[row_1][col] == blk_2[row_2][col]:
-                        if blk_1[row_1][col]:
-                            winners.append(blk_1[row_1][col])
-                            h[blk_1[old][col]] += 100
-            if blk_1[0][col] == blk_1[1][col] and blk_1[1][col] == blk_1[2][col] and blk_1[2][col] == blk_2[0][col] and blk_2[0][col] != '-':
-                h[blk_1[0][col]] += 10
-            if blk_1[1][col] == blk_1[2][col] and blk_1[1][col] == blk_2[0][col] and blk_2[1][col] == blk_2[0][col] and blk_2[0][col] != '-':
-                h[blk_1[1][col]] += 10
-            if blk_1[2][col] == blk_2[0][col] and blk_2[0][col] == blk_2[1][col] and blk_2[1][col] == blk_2[2][col] and blk_2[2][col] != '-':
-                h[blk_1[2][col]] += 10 
-            row_1 = 1
-            row_2 = 2
-            if blk_1[row_1][col] == blk_2[row_2][col] and blk_2[row_2][col] != '-':
-                old = row_1
-                row_1 += 1
-                row_2 -= 1
-                if blk_1[row_1][col] == blk_2[row_2][col] and blk_1[row_1][col] == blk_1[old][col]:
-                    row_2 -=1
-                    if blk_1[row_1][col] == blk_2[row_2][col]:
-                        if blk_2[row_2][col] != '-':
-                            winners.append(blk_2[row_1][col])
-                            h[blk_1[old][col]] += 100
-        return winners
+    def check_diagonalWIN(self):
+        wins = {'B': 0, 'W': 0}
+        winBlox = self.DIAG_WINSblocks
+        winPlace = self.DIAG_WINSplace
+        val = self.getVal
+        for row in range(0, len(winBlox)):
+            blox = winBlox[row]
+            pos = winPlace[row]
+            start = 0
+            end = len(blox) - 1
+            if val(blox[start], pos[start]) != '-' and val(blox[start], pos[start]) == val(blox[end], pos[end]):
+                if val(blox[start], pos[start]) == val(blox[start+ 1], pos[start + 1]) and val(blox[start], pos[start]) == val(blox[end - 1], pos[end - 1]):
+                    if val(blox[start], pos[start]) == val(blox[start + 2], pos[start + 2]):
+                        wins[val(blox[start], pos[start])] += 1
+        return wins
+    
+    ''' 
+        Checks the columns for heuristic values, setting the h values to 
+        the correct token in the dictionary.
+    '''
+    def check_cols_heuristic(self, h_val):
+        top = 1
+        bott = 3
+        val = self.getVal
+        for block_set in range(0,2):
+            top = top + block_set
+            bott = bott + block_set
+            for start in range(1,4):
+                if val(top, start) != '-' and val(top, start) == val(top, start + 3) and val(top, start) == val(top, start + 6):
+                    h_val[val(top, start)] += 5
+                    if val(top, start) == val(bott, start):
+                        h_val[val(top, start)] += 10
+                if val(top, start + 3) != '-' and val(top, start + 3) == val(top, start + 6) and val(top, start + 3) == val(bott, start):
+                    h_val[val(top, start + 3)] += 5
+                    if val(top, start + 3) == val(bott, start + 6):
+                        h_val[val(top, start + 3)] += 10
+                if val(top, start + 6) != '-' and val(top, start + 6) == val(bott, start) and val(top, start + 6) == val(bott, start + 3):
+                    h_val[val(top, start + 6)] += 5
+                    if val(top, start + 6) == val(bott, start + 6):
+                        h_val[val(top, start + 6)] += 10
+                if val(bott, start) != '-' and val(bott, start) == val(bott, start + 3) and val(bott, start) == val(bott, start + 6):
+                    h_val[val(bott, start)] += 5
+            
         
-    ''' Checks the rows of the blocks passed as arguments for a winner
-        Args:
-        blk_1 the first block from the board
-        blk_2 the second block from the board
-        Returns:
-        all winning tokens
+            
+    ''' Checks the columns of the blocks passed as arguments for a winner.
+        Returns all winning tokens in a dictionary mapped by token.
     '''
-    def check_rows(self, blk_1, blk_2, h):
-        winners = []
-        for row in range(0, 3):
-            win = self.check_left(blk_1[row], blk_2[row], h)
-            if win != False:
-                winners.append(win)
-            win = self.check_right(blk_1[row], blk_2[row], h)      
-            if win != False:
-                winners.append(win)
-        return winners
-              
-    ''' Checks the rows of the boards starting at the left for a winner
-        Args: 
-        left - the left block of the board to check
-        right - the right block of the board to check
-        Returns:
-        the winner's token if a winner is found, False otherwise
-    '''          
-    def check_left(self, left, right, h):
-        i = 0
-        j = i + 1
-        if left[i] == right[j] and left[i] != '-':
-            old = i
-            i += 1
-            j -= 1
-            if left[i] == right[j] and right[j] == left[old]:
-                i += 1
-                h[right[j]] += 10
-                if left[i] == right[j]:
-                    h[left[i]] += 100
-                    return left[i]
-        elif left[1] == left[2] and left[2]== right[0] and right[0] == right[1] and left[1] != '-':
-            h[left[1]] += 10
-        elif left[2] == right[0] and right[1] == right[0] and right[2] == right[1] and right[1] != '-':
-            h[left[2]] += 10
-        return False
+    def check_colsWIN(self):
+        wins = {'B': 0, 'W': 0}
+        top = 1
+        bott = 3
+        val = self.getVal
+        for block_set in range(0,2):
+            top = top + block_set
+            bott = bott + block_set
+            for start in range(1,4):
+                if val(top, start) != '-' and val(top, start) == val(bott, start + 3):
+                    if val(top, start) == val(top, start + 3) and val(top, start) == val(bott, start):
+                        if val(top, start) == val(top, start + 6):
+                            wins[val(top, start)] += 1
+                if val(top, start + 3) != '-' and val(top, start + 3) == val(bott, start + 6):
+                    if val(top, start + 3) == val(top, start + 6) and val(top, start + 3) == val(bott, start + 3):
+                        if val(top, start) == val(bott, start):
+                            wins[val(top, start + 3)] += 1
+        return wins
     
-    ''' Checks the rows of the boards starting at the right for a winner
-        Args: 
-        left - the left block of the board to check
-        right - the right block of the board to check
+    ''' 
+        Gets the heuristic value of all rows for the current state and 
+        adds them to the dictionary.
+    '''
+    def check_rows_heuristic(self, h_val):
+        val = self.getVal
+        left = 1
+        right = 2
+        set = 0
+        while set < 2:
+            start = 1
+            end = 3
+            while start < 8:
+                if val(left, start) != '-' and val(left, start) == val(left, start + 1) and val(left, start + 1) == val(left, end):
+                    h_val[val(left, start)] += 5
+                    if val(left, end) == val(right, start):
+                        h_val[val(left, start)] += 10
+                if val(left, start + 1) != '-' and val(left, start + 1) == val(left, end) and val(left, start + 1) == val(right, start):
+                    h_val[val(left, start + 1)] += 5
+                    if val(left, start + 1) == val(right, start + 1):
+                        h_val[val(left, start + 1)] += 10
+                if val(left, end) != '-' and val(left, end) == val(right, start) and val(left, end) == val(right, start + 1):
+                    h_val[val(left, end)] += 5
+                    if val(left, end) == val(right, end):
+                        h_val[val(left, end)] += 10
+                if val(right, start) != '-' and val(right, start) == val(right, start + 1) and val(right, start) == val(right, end):
+                    h_val[val(right, start)] += 5
+                start += 3
+                end += 3
+            set += 1
+        
+    ''' Checks the rows of the blocks passed as arguments for a winner.
         Returns:
-        the winner's token if a winner is found, False otherwise
-    '''   
-    def check_right(self, left, right, h):
-        i = 1
-        j = 2
-        if left[i] == right[j] and left[i] != '-':
-            old = i
-            i += 1
-            j -= 1
-            if left[i] == right[j] and right[j] == left[old] :
-                h[right[j]] += 10
-                i = j
-                j -= 1
-                if right[i] == right[j]:
-                    h[right[i]] += 100
-                    return right[i]
-        elif left[0] == left[1] and left[1]== left[2] and right[0] == left[2] and left[1] != '-':
-            h[left[1]] += 10
-        elif left[2] == right[0] and right[1] == right[0] and right[2] == right[1] and right[1] != '-':
-            h[left[2]] += 10
-        return False        
+        all winning tokens in the dictionary.
+    '''
+    def check_rowsWIN(self):
+        wins = {'B': 0, 'W': 0}
+        val = self.getVal
+        left = 1
+        right = 2
+        set = 0
+        while set < 2:
+            start = 1
+            end = 3
+            while start < 8:
+                if val(left, start) != '-' and val(right, end - 1) == val(right, end - 1):
+                    if val(left, start) == val(left, start + 1) and val(left, start) == val(right, end - 2):
+                        if val(left, start) == val(left, end):
+                            wins[val(left, start)] += 1
+                elif val(left, start + 1) != '-' and val(right, end) == val(right, end):
+                    if val(left, start + 1) == val(left, end) and val(left, start + 1) == val(right, end - 1):
+                        if val(left, start + 1) == val(right, start):
+                            wins[val(left, start + 1)] += 1
+                start += 3
+                end += 3
+            set += 1
+        return wins;
+   
               
 ''' 
     Player class keeps track of the name, token color, and moves 
@@ -366,30 +429,29 @@ class Play:
         curr_player = self.players[0]
         self.board.print_board()
         while not is_won:
-            print curr_player.name,'\'s turn!'
+            print (curr_player.name,'\'s turn!')
             if curr_player.is_AI:
                 move_info = self.ai_tree.get_move(self.board, curr_player)
                 move = move_info['move']
-                dir = '1L'
+                twist = '1L'
                 if move_info['twist']:
-                    dir = move_info['dir']
+                    twist = move_info['dir']
                 is_won, winners = self.board.player_go(curr_player, move)
                 self.board.print_board()
                 if not is_won:
-                    is_won, winners = self.board.player_rotate(curr_player, dir)
-                    self.board.print_board()
-                    
+                    is_won, winners = self.board.player_rotate(curr_player, twist)
+                    self.board.print_board()  
             else:
-                move = raw_input("Enter your move w/o rotation")
+                move = input("Enter your move w/o rotation")
                 while not self.board.check_move(int(move[0]), int(move[2])):
-                    print "invalid position. Try again."
-                    move = raw_input("Enter your move w/o rotation")
+                    print( "invalid position. Try again.")
+                    move = input("Enter your move w/o rotation")
                 is_won, winners = self.board.player_go(curr_player, move)
                 if not is_won:
-                    rotate = raw_input("Enter your rotation")
+                    rotate = input("Enter your rotation")
                     is_won, winners = self.board.player_rotate(curr_player, rotate)
                     self.board.print_board()
-            print is_won
+            print( is_won)
             curr_player = self.next_player(curr_player)
         win_1 = False
         win_2 = False
@@ -406,13 +468,16 @@ class Play:
                     win_2 = True
             
         if win_1 and win_2:
-            print "It's a tie!"
+            print ("It's a tie!")
         elif win_1:
-            print "Player one,", self.players[0].name, "won the game!" 
+            print ("Player one,", self.players[0].name, "won the game!" )
         elif win_2:  
-            print "Player two,", self.players[1].name, "won the game!" 
+            print ("Player two,", self.players[1].name, "won the game!")
                 
-          
+     
+    ''' 
+         Returns the next player in rotation.
+    '''     
     def next_player(self, current):
         if current.name == self.players[0].name:
             return self.players[1]
@@ -426,24 +491,24 @@ class Play:
         if rand % 2 == 0:
             color_rand = random.randint(0, 500)
             if color_rand % 2 == 0:
-                print 'AI player, Data is first! Data has chosen to play (W)hite'
+                print ('AI player, Data is first! Data has chosen to play (W)hite')
                 self.players.append(Player('Data', 'W', True))
-                name = raw_input('Player 2, enter your name here:')
-                print 'hello,' + name + '! You will be playing (B)lack. Let\'s play!'
+                name = input('Player 2, enter your name here:')
+                print( 'hello,',  name + '! You will be playing (B)lack. Let\'s play!')
                 self.players.append(Player(name, 'B', False))
                 
             else:
-                print 'AI player, Data is first! Data has chosen to play (B)lack'
+                print( 'AI player, Data is first! Data has chosen to play (B)lack')
                 self.players.append(Player('Data', 'B', True))
-                name = raw_input('Player 2, enter your name here:')
-                print 'hello,' + name + '! You will be playing (W)hite. Let\'s play!'
+                name = input('Player 2, enter your name here:')
+                print ('hello,', name + '! You will be playing (W)hite. Let\'s play!')
                 self.players.append(Player(name, 'W', False))
             
         else:
-            print 'You are first!'
-            name = raw_input('Please enter your name here:')
-            color = raw_input('Would you like to play as (B)lack or (W)hite?:')
-            print name + ', meet Data, our friendly AI player and your opponent. Let\'s play!'
+            print( 'You are first!')
+            name = input('Please enter your name here:')
+            color = input('Would you like to play as (B)lack or (W)hite?:')
+            print (name + ', meet Data, our friendly AI player and your opponent. Let\'s play!')
             if color == "W" or color == "w" or color.upper == "WHITE":
                 self.players.append(Player(name, 'W', False))
                 self.players.append(Player('Data', 'B', True))

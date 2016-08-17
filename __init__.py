@@ -7,7 +7,7 @@ import pentago
 
 def main():
     
-    print 'hello pentago'
+    print ('hello pentago')
 #     board = pentago.Board()
 #     board.move(1, 1, 'B')
 #     print 'going left:'
