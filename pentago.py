@@ -1,6 +1,5 @@
 '''
 Created on Jul 22, 2016
-
 @author: Les
 '''
 import point_2D as point
@@ -50,8 +49,8 @@ class Board:
         wins = self.is_goal_achieved()
         h = {'B':0, 'W':0}
         self.check_cols_heuristic(h)
-        print ("wins = B:", wins[B], "W:",  wins[W])
-        print ("H = B:", h[B], "W:", h[W])
+        print "wins = B:", wins[B], "W:",  wins[W]
+        print "H = B:", h[B], "W:", h[W]
         self.move(2, start, W)
         self.move(2, start + 3, W)
         self.move(2, start + 6, W)
@@ -60,8 +59,8 @@ class Board:
         self.print_board()
         wins = self.is_goal_achieved()
         self.check_cols_heuristic(h)
-        print( "wins = B:", wins[B], "W:",  wins[W])
-        print ("H = B:", h[B], "W:", h[W])
+        print "wins = B:", wins[B], "W:",  wins[W]
+        print "H = B:", h[B], "W:", h[W]
         
     def testDiagWin(self):
         token = 'B'
@@ -72,8 +71,8 @@ class Board:
         wins = self.is_goal_achieved()
         h = {'B':0, 'W':0}
         self.get_diag_heuristic(h)
-        print ("H = B:", h['B'], "W:", h['W'])
-        print ("Wins = B:", wins['B'], "W:", wins['W'])
+        print "H = B:", h['B'], "W:", h['W']
+        print "Wins = B:", wins['B'], "W:", wins['W']
     
     def testRowWin(self):
         self.move(1, 1, 'B')
@@ -100,8 +99,8 @@ class Board:
         wins = self.is_goal_achieved()
         h = {'B': 0, 'W':0}
         self.check_rows_heuristic(h)
-        print("H = B:", h['B'], "W:", h['W'])
-        print ("Wins = B:", wins['B'], "W:", wins['W'])
+        print"H = B:", h['B'], "W:", h['W']
+        print "Wins = B:", wins['B'], "W:", wins['W']
     
     ''' Returns a block for the board filled with dashes (empty)'''    
     def get_block(self):
@@ -109,15 +108,15 @@ class Board:
     
     ''' prints half (top or bottom) of the gameboard to the console'''
     def print_half(self, b_1, b_2):
-        print( '+-------+-------+')
+        print'+-------+-------+'
         for row in range(0,3):
-            print( '|', b_1[row][0], b_1[row][1], b_1[row][2], '|', b_2[row][0], b_2[row][1], b_2[row][2], '|')
+            print '|', b_1[row][0], b_1[row][1], b_1[row][2], '|', b_2[row][0], b_2[row][1], b_2[row][2], '|'
     
     ''' prints the gameboard to the console'''       
     def print_board(self):
         self.print_half(self.block_1, self.block_2)
         self.print_half(self.block_3, self.block_4)
-        print ('+-------+-------+')
+        print '+-------+-------+'
      
     ''' 
         Gets the heuristic for the current state
@@ -148,8 +147,9 @@ class Board:
         self.file.write('+---+---+\n')
         
     ''' logs the specifics of a player's move to the file'''
-    def log_full_move(self, block_place, position, block_rot, direction):
-        self.file.write(block_place + '/' + ' ' + position + block_rot 
+    def log_full_move(self, player, block_place, position, block_rot, direction):
+        self.file.write("Player Name & Token:" + " " +  player.name +" - " + player.color + '\n')
+        self.file.write(block_place + '/' + position +" "+ block_rot 
                         + direction + '\n')
     '''
          Implements a player's move checking for a win
@@ -158,7 +158,6 @@ class Board:
          well as the dictionary containing wins
     '''   
     def player_go(self, player, move):
-        print (move)
         the_block = move[0]
         the_spot = move[2]
         self.move(int(the_block), int(the_spot), player.color)
@@ -192,7 +191,7 @@ class Board:
         space = self.pos_key[position - 1]
         row = space.x
         col = space.y
-        (self.blocks[block])[row][col] = token      
+        (self.blocks[block])[row][col] = token    
 #         self.print_board()
      
     ''' 
@@ -352,8 +351,8 @@ class Board:
         val = self.getVal
         left = 1
         right = 2
-        set = 0
-        while set < 2:
+        sets = 0
+        while sets < 2:
             start = 1
             end = 3
             while start < 8:
@@ -373,7 +372,7 @@ class Board:
                     h_val[val(right, start)] += 5
                 start += 3
                 end += 3
-            set += 1
+            sets += 1
         
     ''' Checks the rows of the blocks passed as arguments for a winner.
         Returns:
@@ -384,22 +383,22 @@ class Board:
         val = self.getVal
         left = 1
         right = 2
-        set = 0
-        while set < 2:
+        sets = 0
+        while sets < 2:
             start = 1
             end = 3
             while start < 8:
-                if val(left, start) != '-' and val(right, end - 1) == val(right, end - 1):
+                if val(left, start) != '-' and val(left, start) ==  val(right, end - 1):
                     if val(left, start) == val(left, start + 1) and val(left, start) == val(right, end - 2):
                         if val(left, start) == val(left, end):
                             wins[val(left, start)] += 1
-                elif val(left, start + 1) != '-' and val(right, end) == val(right, end):
+                elif val(left, start + 1) != '-' and val(left, start + 1) == val(right, end):
                     if val(left, start + 1) == val(left, end) and val(left, start + 1) == val(right, end - 1):
                         if val(left, start + 1) == val(right, start):
                             wins[val(left, start + 1)] += 1
                 start += 3
                 end += 3
-            set += 1
+            sets += 1
         return wins;
    
               
@@ -421,6 +420,7 @@ class Play:
         self.players = [] #max of 2
         self.board = Board();
         self.ai_tree = game_tree.Tree()
+        self.moves_taken = 0
         
     ''' starts a game of pentago'''
     def start(self):
@@ -429,51 +429,77 @@ class Play:
         curr_player = self.players[0]
         self.board.print_board()
         while not is_won:
-            print (curr_player.name,'\'s turn!')
+            print curr_player.name,'\'s turn!'
             if curr_player.is_AI:
-                move_info = self.ai_tree.get_move(self.board, curr_player)
-                move = move_info['move']
-                twist = '1L'
+                move_info = {'move':0, 'twist':0, 'dir': 0}
+                if self.moves_taken < 2:
+                    bloc = random.randint(1, 4)
+                    pos = random.randint(1, 9)
+                    is_valid = self.board.check_move(bloc, pos)
+                    while not is_valid:
+                        bloc = random.randint(1, 4)
+                        pos = random.randint(1, 9)
+                    is_valid = self.board.check_move(bloc, pos)
+                    twist_b = random.randint(1, 4)
+                    twist_d = 'l'
+                    if bloc % 2 == 0:
+                        twist_d = 'r'
+                    move = move_info['move'] = str(bloc) + '/' + str(pos)
+                    move_info['twist'] = True
+                    move_info['dir'] = str(twist_b) + twist_d
+                else:
+                    move_info = self.ai_tree.get_move(self.board, curr_player)
+                    print 'Crtd:', self.ai_tree.num_created, 'Expd:', self.ai_tree.num_expanded
+                    move = move_info['move']
+                    twist = '1L'
                 if move_info['twist']:
                     twist = move_info['dir']
-                is_won, winners = self.board.player_go(curr_player, move)
+                is_won, winners = self.board.player_go(curr_player, move_info['move'])
                 self.board.print_board()
                 if not is_won:
                     is_won, winners = self.board.player_rotate(curr_player, twist)
                     self.board.print_board()  
+                    if move_info['twist']:
+                        self.board.log_full_move(curr_player, move[0], move[2], move_info['dir'][0], move_info['dir'][1])
+                    else:
+                        self.board.log_full_move(curr_player, move[0], move[2], "NA", "NA")
+                    self.board.log_board()
+                print "Data placed their piece at block:", move[0], "position:", move[2]
+                if move_info['twist']:
+                    print "Data twisted block:",  move_info['dir'][0], "to the:",  move_info['dir'][1]
             else:
-                move = input("Enter your move w/o rotation")
+                move = raw_input("Enter your move w/o rotation")
                 while not self.board.check_move(int(move[0]), int(move[2])):
-                    print( "invalid position. Try again.")
-                    move = input("Enter your move w/o rotation")
+                    print "invalid position. Try again."
+                    move = raw_input("Enter your move w/o rotation")
                 is_won, winners = self.board.player_go(curr_player, move)
+                print "You placed your piece at block:", move[0], "position:", move[2]
                 if not is_won:
-                    rotate = input("Enter your rotation")
+                    rotate = raw_input("Enter your rotation")
                     is_won, winners = self.board.player_rotate(curr_player, rotate)
+                    print "You twisted block:",  rotate[0], "to the:",  rotate[1]
                     self.board.print_board()
-            print( is_won)
+                    self.board.log_full_move(curr_player,move[0], move[2], rotate[0], rotate[1])
+                    self.board.log_board()
+                else:
+                    self.board.log_full_move(curr_player, move[0], move[2], "NA", "NA")
+                    self.board.log_board()
             curr_player = self.next_player(curr_player)
-        win_1 = False
-        win_2 = False
-        for w in winners:
-            if w == 'B':
-                if self.players[0].color == 'B':
-                    win_1 = True
+            self.moves_taken += 1
+        if is_won:
+            if winners['B'] > 0:
+                if winners['W'] > 0:
+                    print "Game Over. It's a TIE!"
                 else:
-                    win_2 = True
-            if w == 'W':
+                    if self.players[0].color == 'B':
+                        print 'Game Over!', self.players[0].name, 'won!'
+                    else:
+                        print 'Game Over!', self.players[1].name, 'won!'
+            elif winners['W'] > 0:
                 if self.players[0].color == 'W':
-                    win_1 = True
+                    print 'Game Over!', self.players[0].name, 'won!'
                 else:
-                    win_2 = True
-            
-        if win_1 and win_2:
-            print ("It's a tie!")
-        elif win_1:
-            print ("Player one,", self.players[0].name, "won the game!" )
-        elif win_2:  
-            print ("Player two,", self.players[1].name, "won the game!")
-                
+                    print 'Game Over!', self.players[1].name, 'won!'     
      
     ''' 
          Returns the next player in rotation.
@@ -491,24 +517,24 @@ class Play:
         if rand % 2 == 0:
             color_rand = random.randint(0, 500)
             if color_rand % 2 == 0:
-                print ('AI player, Data is first! Data has chosen to play (W)hite')
+                print 'AI player, Data is first! Data has chosen to play (W)hite'
                 self.players.append(Player('Data', 'W', True))
-                name = input('Player 2, enter your name here:')
-                print( 'hello,',  name + '! You will be playing (B)lack. Let\'s play!')
+                name = raw_input('Player 2, enter your name here:')
+                print 'hello,',  name + '! You will be playing (B)lack. Let\'s play!'
                 self.players.append(Player(name, 'B', False))
                 
             else:
-                print( 'AI player, Data is first! Data has chosen to play (B)lack')
+                print 'AI player, Data is first! Data has chosen to play (B)lack'
                 self.players.append(Player('Data', 'B', True))
-                name = input('Player 2, enter your name here:')
-                print ('hello,', name + '! You will be playing (W)hite. Let\'s play!')
+                name = raw_input('Player 2, enter your name here:')
+                print 'hello,', name + '! You will be playing (W)hite. Let\'s play!'
                 self.players.append(Player(name, 'W', False))
             
         else:
-            print( 'You are first!')
-            name = input('Please enter your name here:')
-            color = input('Would you like to play as (B)lack or (W)hite?:')
-            print (name + ', meet Data, our friendly AI player and your opponent. Let\'s play!')
+            print 'You are first!'
+            name = raw_input('Please enter your name here:')
+            color = raw_input('Would you like to play as (B)lack or (W)hite?:')
+            print name + ', meet Data, our friendly AI player and your opponent. Let\'s play!'
             if color == "W" or color == "w" or color.upper == "WHITE":
                 self.players.append(Player(name, 'W', False))
                 self.players.append(Player('Data', 'B', True))
@@ -517,6 +543,5 @@ class Play:
                 self.players.append(Player('Data', 'W', True))
                 
         self.board.set_players(self.players[0], self.players[1])
-  
-    
-                
+ 
+        

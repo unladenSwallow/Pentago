@@ -134,6 +134,3 @@ class Stack:
         temp = self.stack.pop(index)
         self.stack.insert(index, temp)
         return temp
-        
-        
-            
